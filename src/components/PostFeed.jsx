@@ -66,7 +66,7 @@ export default function PostFeed({ posts, categories, onLike, onDelete, onCommen
                 <span className="post-avatar">{post.authorName.charAt(0)}</span>
                 <div className="post-meta">
                   <span className="post-author">{post.authorName}</span>
-                  <span className="post-time">{formatTime(post.createdAt)}</span>
+                  <span className="post-time">{formatTime(post.created_at)}</span>
                 </div>
                 <span className="post-category-badge">{cat.icon} {cat.name}</span>
               </div>
@@ -110,7 +110,7 @@ export default function PostFeed({ posts, categories, onLike, onDelete, onCommen
                         <div key={c.id} className="comment-item">
                           <span className="comment-author">{c.authorName}</span>
                           <span className="comment-text">{c.content}</span>
-                          <span className="comment-time">{formatTime(c.createdAt)}</span>
+                          <span className="comment-time">{formatTime(c.created_at)}</span>
                         </div>
                       ))}
                     </div>
