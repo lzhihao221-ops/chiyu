@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { supabase } from '../lib/supabase'
 
 const POSTS_KEY = 'community-posts'
 const KNOWLEDGE_KEY = 'community-knowledge'
@@ -28,131 +29,183 @@ function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 }
 
-// 模拟用户（本地存储）
-function getUserId() {
-  let uid = localStorage.getItem('user-id')
-  if (!uid) {
-    uid = 'user_' + generateId()
-    localStorage.setItem('user-id', uid)
-  }
-  return uid
-}
-
-function getUserName() {
-  return localStorage.getItem('user-name') || '匿名用户'
-}
-
-export function useCommunity() {
+export function useCommunity(user, useCloud) {
   const [posts, setPosts] = useState(() => loadJSON(POSTS_KEY, []))
   const [knowledge, setKnowledge] = useState(() => loadJSON(KNOWLEDGE_KEY, []))
   const [links, setLinks] = useState(() => loadJSON(LINKS_KEY, []))
-  const [userName, setUserNameState] = useState(getUserName)
-  const userId = getUserId()
+  const [userName, setUserNameState] = useState(() => localStorage.getItem('user-name') || '匿名用户')
+  const userId = user?.id || localStorage.getItem('user-id') || (() => { const id = 'user_' + generateId(); localStorage.setItem('user-id', id); return id })()
 
-  useEffect(() => { saveJSON(POSTS_KEY, posts) }, [posts])
-  useEffect(() => { saveJSON(KNOWLEDGE_KEY, knowledge) }, [knowledge])
-  useEffect(() => { saveJSON(LINKS_KEY, links) }, [links])
+  // 云端模式：加载数据
+  useEffect(() => {
+    if (!useCloud || !user) return
 
-  const setUserName = useCallback((name) => {
+    const loadAll = async () => {
+      // 加载帖子（含点赞和评论数）
+      const { data: postsData } = await supabase
+        .from('posts').select('*, likes(user_id), comments(*)')
+        .order('created_at', { ascending: false })
+      if (postsData) {
+        const formatted = postsData.map(p => ({
+          ...p,
+          authorId: p.user_id,
+          authorName: p.author_name || '匿名用户',
+          likes: (p.likes || []).map(l => l.user_id),
+          comments: (p.comments || []).map(c => ({
+            ...c,
+            authorId: c.user_id,
+            authorName: c.author_name || '匿名用户',
+          })),
+        }))
+        setPosts(formatted)
+      }
+
+      // 加载知识库
+      const { data: kbData } = await supabase
+        .from('knowledge').select('*').order('created_at', { ascending: false })
+      if (kbData) setKnowledge(kbData.map(k => ({ ...k, authorId: k.user_id })))
+
+      // 加载链接
+      const { data: linkData } = await supabase
+        .from('links').select('*').order('created_at', { ascending: false })
+      if (linkData) setLinks(linkData.map(l => ({ ...l, authorId: l.user_id })))
+
+      // 加载用户名
+      const { data: profile } = await supabase
+        .from('profiles').select('username').eq('id', user.id).single()
+      if (profile?.username) setUserNameState(profile.username)
+    }
+    loadAll()
+  }, [useCloud, user])
+
+  // 本地模式：写 localStorage
+  useEffect(() => { if (!useCloud) saveJSON(POSTS_KEY, posts) }, [posts, useCloud])
+  useEffect(() => { if (!useCloud) saveJSON(KNOWLEDGE_KEY, knowledge) }, [knowledge, useCloud])
+  useEffect(() => { if (!useCloud) saveJSON(LINKS_KEY, links) }, [links, useCloud])
+
+  const setUserName = useCallback(async (name) => {
     setUserNameState(name)
     localStorage.setItem('user-name', name)
-  }, [])
+    if (useCloud && user) {
+      await supabase.from('profiles').update({ username: name }).eq('id', user.id)
+    }
+  }, [useCloud, user])
 
   // === 帖子 ===
-  const addPost = useCallback((title, content, category, images = []) => {
-    const post = {
-      id: generateId(),
-      title, content, category, images,
+  const addPost = useCallback(async (title, content, category, images = []) => {
+    const id = generateId()
+    const newPost = {
+      id, title, content, category, images,
       authorId: userId,
       authorName: userName,
       likes: [],
       comments: [],
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     }
-    setPosts(prev => [post, ...prev])
-    return post.id
-  }, [userId, userName])
 
-  const deletePost = useCallback((id) => {
+    if (useCloud && user) {
+      await supabase.from('posts').insert({
+        id, user_id: user.id, title, content, category, images,
+        author_name: userName,
+      })
+      // 实时订阅会更新，但本地也先加
+    }
+    setPosts(prev => [newPost, ...prev])
+    return id
+  }, [useCloud, user, userId, userName])
+
+  const deletePost = useCallback(async (id) => {
+    if (useCloud && user) {
+      await supabase.from('posts').delete().eq('id', id).eq('user_id', user.id)
+    }
     setPosts(prev => prev.filter(p => p.id !== id))
-  }, [])
+  }, [useCloud, user])
 
-  const toggleLike = useCallback((postId) => {
+  const toggleLike = useCallback(async (postId) => {
+    if (useCloud && user) {
+      const existing = posts.find(p => p.id === postId)
+      const liked = existing?.likes?.includes(userId)
+      if (liked) {
+        await supabase.from('likes').delete().eq('post_id', postId).eq('user_id', user.id)
+      } else {
+        await supabase.from('likes').insert({ post_id: postId, user_id: user.id })
+      }
+    }
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
       const liked = p.likes.includes(userId)
-      return {
-        ...p,
-        likes: liked ? p.likes.filter(id => id !== userId) : [...p.likes, userId]
-      }
+      return { ...p, likes: liked ? p.likes.filter(id => id !== userId) : [...p.likes, userId] }
     }))
-  }, [userId])
+  }, [useCloud, user, userId, posts])
 
-  const addComment = useCallback((postId, content) => {
+  const addComment = useCallback(async (postId, content) => {
+    const comment = {
+      id: generateId(),
+      content,
+      authorId: userId,
+      authorName: userName,
+      created_at: new Date().toISOString(),
+    }
+
+    if (useCloud && user) {
+      await supabase.from('comments').insert({
+        id: comment.id, post_id: postId, user_id: user.id, content, author_name: userName,
+      })
+    }
     setPosts(prev => prev.map(p => {
       if (p.id !== postId) return p
-      return {
-        ...p,
-        comments: [...p.comments, {
-          id: generateId(),
-          content,
-          authorId: userId,
-          authorName: userName,
-          createdAt: new Date().toISOString(),
-        }]
-      }
+      return { ...p, comments: [...p.comments, comment] }
     }))
-  }, [userId, userName])
+  }, [useCloud, user, userId, userName])
 
   // === 知识库 ===
-  const addKnowledge = useCallback((title, content, category, tags = []) => {
-    const entry = {
-      id: generateId(),
-      title, content, category, tags,
-      authorId: userId,
-      authorName: userName,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+  const addKnowledge = useCallback(async (title, content, category, tags = []) => {
+    const id = generateId()
+    const entry = { id, title, content, category, tags, authorId: userId, authorName: userName, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }
+
+    if (useCloud && user) {
+      await supabase.from('knowledge').insert({ id, user_id: user.id, title, content, category, tags })
     }
     setKnowledge(prev => [entry, ...prev])
-  }, [userId, userName])
+  }, [useCloud, user, userId, userName])
 
-  const updateKnowledge = useCallback((id, updates) => {
-    setKnowledge(prev => prev.map(k =>
-      k.id === id ? { ...k, ...updates, updatedAt: new Date().toISOString() } : k
-    ))
-  }, [])
+  const updateKnowledge = useCallback(async (id, updates) => {
+    if (useCloud && user) {
+      await supabase.from('knowledge').update({ ...updates, updated_at: new Date().toISOString() }).eq('id', id).eq('user_id', user.id)
+    }
+    setKnowledge(prev => prev.map(k => k.id === id ? { ...k, ...updates, updated_at: new Date().toISOString() } : k))
+  }, [useCloud, user])
 
-  const deleteKnowledge = useCallback((id) => {
+  const deleteKnowledge = useCallback(async (id) => {
+    if (useCloud && user) {
+      await supabase.from('knowledge').delete().eq('id', id).eq('user_id', user.id)
+    }
     setKnowledge(prev => prev.filter(k => k.id !== id))
-  }, [])
+  }, [useCloud, user])
 
   // === 链接收藏 ===
-  const addLink = useCallback((url, title, description, category) => {
-    const link = {
-      id: generateId(),
-      url, title, description, category,
-      authorId: userId,
-      authorName: userName,
-      createdAt: new Date().toISOString(),
+  const addLink = useCallback(async (url, title, description, category) => {
+    const id = generateId()
+    const link = { id, url, title, description, category, authorId: userId, authorName: userName, created_at: new Date().toISOString() }
+
+    if (useCloud && user) {
+      await supabase.from('links').insert({ id, user_id: user.id, url, title, description, category })
     }
     setLinks(prev => [link, ...prev])
-  }, [userId, userName])
+  }, [useCloud, user, userId, userName])
 
-  const deleteLink = useCallback((id) => {
+  const deleteLink = useCallback(async (id) => {
+    if (useCloud && user) {
+      await supabase.from('links').delete().eq('id', id).eq('user_id', user.id)
+    }
     setLinks(prev => prev.filter(l => l.id !== id))
-  }, [])
+  }, [useCloud, user])
 
   return {
-    // 帖子
     posts, addPost, deletePost, toggleLike, addComment,
-    // 知识库
     knowledge, addKnowledge, updateKnowledge, deleteKnowledge,
-    // 链接
     links, addLink, deleteLink,
-    // 用户
     userName, setUserName, userId,
-    // 分类
     categories: CATEGORIES,
   }
 }

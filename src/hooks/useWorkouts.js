@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { supabase } from '../lib/supabase'
 
 const STORAGE_KEY = 'workout-checkin-data'
 const GOALS_KEY = 'workout-goals'
@@ -21,9 +22,7 @@ function loadJSON(key, fallback) {
   try {
     const raw = localStorage.getItem(key)
     return raw ? JSON.parse(raw) : fallback
-  } catch {
-    return fallback
-  }
+  } catch { return fallback }
 }
 
 function saveJSON(key, data) {
@@ -36,10 +35,7 @@ function getDateKey(date = new Date()) {
 
 function getCurrentPosition() {
   return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('浏览器不支持定位'))
-      return
-    }
+    if (!navigator.geolocation) { reject(new Error('浏览器不支持定位')); return }
     navigator.geolocation.getCurrentPosition(
       (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
       (err) => reject(err),
@@ -48,13 +44,43 @@ function getCurrentPosition() {
   })
 }
 
-export function useWorkouts() {
+export function useWorkouts(user, useCloud) {
   const [records, setRecords] = useState(() => loadJSON(STORAGE_KEY, []))
   const [goals, setGoals] = useState(() => loadJSON(GOALS_KEY, { weeklyDays: 5, dailyMinutes: 30 }))
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light')
 
-  useEffect(() => { saveJSON(STORAGE_KEY, records) }, [records])
-  useEffect(() => { saveJSON(GOALS_KEY, goals) }, [goals])
+  // 云端模式：加载数据
+  useEffect(() => {
+    if (!useCloud || !user) return
+
+    const loadData = async () => {
+      // 加载运动记录
+      const { data: workouts } = await supabase
+        .from('workouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+      if (workouts) setRecords(workouts)
+
+      // 加载目标
+      const { data: goalData } = await supabase
+        .from('goals').select('*').eq('user_id', user.id).single()
+      if (goalData) setGoals({ weeklyDays: goalData.weekly_days, dailyMinutes: goalData.daily_minutes })
+    }
+    loadData()
+
+    // 实时订阅
+    const channel = supabase.channel('workouts-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts', filter: `user_id=eq.${user.id}` },
+        () => {
+          supabase.from('workouts').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
+            .then(({ data }) => { if (data) setRecords(data) })
+        }
+      ).subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [useCloud, user])
+
+  // 本地模式：写 localStorage
+  useEffect(() => { if (!useCloud) saveJSON(STORAGE_KEY, records) }, [records, useCloud])
+  useEffect(() => { if (!useCloud) saveJSON(GOALS_KEY, goals) }, [goals, useCloud])
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme)
     document.documentElement.setAttribute('data-theme', theme)
@@ -63,19 +89,37 @@ export function useWorkouts() {
   const addRecord = useCallback(async (type, duration, note = '') => {
     let location = null
     try { location = await getCurrentPosition() } catch {}
-    const newRecord = {
-      id: Date.now().toString(),
-      date: getDateKey(),
-      type, duration, note, location,
-      createdAt: new Date().toISOString(),
+    const id = Date.now().toString()
+    const date = getDateKey()
+    const newRecord = { id, date, type, duration, note, location, created_at: new Date().toISOString() }
+
+    if (useCloud && user) {
+      await supabase.from('workouts').insert({ ...newRecord, user_id: user.id })
+      // 实时订阅会自动更新
+    } else {
+      setRecords(prev => [newRecord, ...prev])
     }
-    setRecords(prev => [newRecord, ...prev])
-  }, [])
+  }, [useCloud, user])
 
-  const deleteRecord = useCallback((id) => {
+  const deleteRecord = useCallback(async (id) => {
+    if (useCloud && user) {
+      await supabase.from('workouts').delete().eq('id', id).eq('user_id', user.id)
+    }
     setRecords(prev => prev.filter(r => r.id !== id))
-  }, [])
+  }, [useCloud, user])
 
+  const saveGoals = useCallback(async (newGoals) => {
+    setGoals(newGoals)
+    if (useCloud && user) {
+      await supabase.from('goals').upsert({
+        user_id: user.id,
+        weekly_days: newGoals.weeklyDays,
+        daily_minutes: newGoals.dailyMinutes,
+      })
+    }
+  }, [useCloud, user])
+
+  // 计算值（缓存）
   const todayRecords = useMemo(() => records.filter(r => r.date === getDateKey()), [records])
   const isCheckedInToday = todayRecords.length > 0
 
@@ -98,7 +142,7 @@ export function useWorkouts() {
     return dates.size
   }, [records])
 
-  const totalDuration = useMemo(() => records.reduce((sum, r) => sum + r.duration, 0), [records])
+  const totalDuration = useMemo(() => records.reduce((sum, r) => sum + (r.duration || 0), 0), [records])
 
   const getMonthDates = (year, month) => {
     const dates = new Set()
@@ -116,16 +160,14 @@ export function useWorkouts() {
     weekStart.setDate(now.getDate() - dayOfWeek + 1)
     weekStart.setHours(0, 0, 0, 0)
 
-    let activeDays = 0
-    let totalMinutes = 0
+    let activeDays = 0, totalMinutes = 0
     const dailyData = []
-
     for (let i = 0; i < 7; i++) {
       const d = new Date(weekStart)
       d.setDate(weekStart.getDate() + i)
       const key = getDateKey(d)
       const dayRecords = records.filter(r => r.date === key)
-      const minutes = dayRecords.reduce((s, r) => s + r.duration, 0)
+      const minutes = dayRecords.reduce((s, r) => s + (r.duration || 0), 0)
       if (dayRecords.length > 0) activeDays++
       totalMinutes += minutes
       dailyData.push({ date: key, day: ['一','二','三','四','五','六','日'][i], minutes, records: dayRecords.length })
@@ -140,7 +182,7 @@ export function useWorkouts() {
     records.forEach(r => {
       if (!stats[r.type]) stats[r.type] = { count: 0, duration: 0 }
       stats[r.type].count++
-      stats[r.type].duration += r.duration
+      stats[r.type].duration += (r.duration || 0)
     })
     return EXERCISE_TYPES.map(t => ({
       ...t,
@@ -149,14 +191,12 @@ export function useWorkouts() {
     })).filter(s => s.count > 0).sort((a, b) => b.count - a.count)
   }
 
-  const getRecordsWithLocation = () => records.filter(r => r.location)
-
   return {
     records, addRecord, deleteRecord,
     todayRecords, isCheckedInToday,
     streak, monthCheckins,
     totalDuration, getMonthDates, exerciseTypes: EXERCISE_TYPES,
-    getRecordsWithLocation, getWeekStats, getRecentRecords, getTypeStats,
-    goals, setGoals, theme, setTheme,
+    getWeekStats, getRecentRecords, getTypeStats,
+    goals, setGoals: saveGoals, theme, setTheme,
   }
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName }) {
+export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName, isGuest, useCloud, onLogout, profile }) {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(userName)
 
@@ -39,6 +39,8 @@ export default function Profile({ theme, setTheme, totalDuration, records, strea
             {userName} ✏️
           </h2>
         )}
+        {useCloud && <span className="profile-badge">☁️ 云端同步</span>}
+        {isGuest && <span className="profile-badge guest">📱 游客模式</span>}
       </div>
 
       <div className="profile-stats-grid">
@@ -69,18 +71,26 @@ export default function Profile({ theme, setTheme, totalDuration, records, strea
           <span>🌓 深色模式</span>
           <span className="menu-toggle">{theme === 'dark' ? '开启' : '关闭'}</span>
         </div>
-        <div className="menu-item" onClick={() => {
-          if (confirm('确定要清除所有数据吗？')) {
-            localStorage.clear()
-            location.reload()
-          }
+        {!useCloud && (
+          <div className="menu-item" onClick={() => {
+            if (confirm('确定要清除所有数据吗？')) {
+              localStorage.clear()
+              location.reload()
+            }
+          }}>
+            <span>🗑 清除数据</span>
+            <span className="menu-arrow">›</span>
+          </div>
+        )}
+        <div className="menu-item logout" onClick={() => {
+          if (confirm('确定要退出登录吗？')) onLogout()
         }}>
-          <span>🗑 清除数据</span>
+          <span>🚪 退出登录</span>
           <span className="menu-arrow">›</span>
         </div>
       </div>
 
-      <p className="profile-version">吃鱼 v1.0</p>
+      <p className="profile-version">吃鱼 v2.0</p>
     </div>
   )
 }

@@ -1,8 +1,10 @@
 import { useState, lazy, Suspense } from 'react'
+import { useAuth } from './hooks/useAuth'
 import { useWorkouts } from './hooks/useWorkouts'
 import { useCommunity } from './hooks/useCommunity'
 import HomePage from './components/HomePage'
 import BottomNav from './components/BottomNav'
+import AuthPage from './components/AuthPage'
 
 const LivePage = lazy(() => import('./components/LivePage'))
 const ShopPage = lazy(() => import('./components/ShopPage'))
@@ -33,13 +35,24 @@ const TITLES = {
 }
 
 export default function App() {
+  const auth = useAuth()
   const [activeTab, setActiveTab] = useState('home')
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [communitySubTab, setCommunitySubTab] = useState('feed')
-  const hook = useWorkouts()
-  const comm = useCommunity()
+  const hook = useWorkouts(auth.user, auth.useCloud)
+  const comm = useCommunity(auth.user, auth.useCloud)
 
   const navigate = (tab) => setActiveTab(tab)
+
+  // 加载中
+  if (auth.loading) {
+    return <div style={{ textAlign: 'center', paddingTop: '40vh', color: 'var(--text-secondary)' }}>加载中...</div>
+  }
+
+  // 未登录 → 登录页
+  if (!auth.isLoggedIn) {
+    return <AuthPage onAuth={auth.handleAuth} />
+  }
 
   const renderContent = () => {
     switch (activeTab) {
@@ -133,6 +146,10 @@ export default function App() {
             exerciseTypes={hook.exerciseTypes}
             userName={comm.userName}
             setUserName={comm.setUserName}
+            isGuest={auth.isGuest}
+            useCloud={auth.useCloud}
+            onLogout={auth.logout}
+            profile={auth.profile}
           />
         )
       default:
@@ -146,6 +163,7 @@ export default function App() {
         <div className="header-top">
           <h1>{TITLES[activeTab] || '🐟 吃鱼'}</h1>
           <div className="header-actions">
+            {auth.useCloud && <span className="header-cloud">☁️</span>}
             <button className="header-btn" onClick={() => navigate('profile')}>👤</button>
             <button className="header-btn" onClick={() => navigate('stats')}>📊</button>
             <button className="header-btn" onClick={() => navigate('checkin')}>🎯</button>
