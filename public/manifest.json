@@ -2,7 +2,7 @@
   "name": "吃鱼",
   "short_name": "吃鱼",
   "description": "运动 · 社区 · 直播 · 商城",
-  "start_url": "/",
+  "start_url": "/chiyu/",
   "display": "standalone",
   "background_color": "#f5f7fa",
   "theme_color": "#4f8cff",
