@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 
 const STORAGE_KEY = 'workout-checkin-data'
 const GOALS_KEY = 'workout-goals'
@@ -76,19 +76,19 @@ export function useWorkouts() {
     setRecords(prev => prev.filter(r => r.id !== id))
   }, [])
 
-  const todayRecords = records.filter(r => r.date === getDateKey())
+  const todayRecords = useMemo(() => records.filter(r => r.date === getDateKey()), [records])
   const isCheckedInToday = todayRecords.length > 0
 
-  const getStreak = () => {
+  const streak = useMemo(() => {
     const dateSet = new Set(records.map(r => r.date))
-    let streak = 0
+    let s = 0
     const d = new Date()
     if (!dateSet.has(getDateKey(d))) d.setDate(d.getDate() - 1)
-    while (dateSet.has(getDateKey(d))) { streak++; d.setDate(d.getDate() - 1) }
-    return streak
-  }
+    while (dateSet.has(getDateKey(d))) { s++; d.setDate(d.getDate() - 1) }
+    return s
+  }, [records])
 
-  const getMonthCheckins = () => {
+  const monthCheckins = useMemo(() => {
     const now = new Date()
     const dates = new Set()
     records.forEach(r => {
@@ -96,7 +96,9 @@ export function useWorkouts() {
       if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) dates.add(r.date)
     })
     return dates.size
-  }
+  }, [records])
+
+  const totalDuration = useMemo(() => records.reduce((sum, r) => sum + r.duration, 0), [records])
 
   const getMonthDates = (year, month) => {
     const dates = new Set()
@@ -147,13 +149,12 @@ export function useWorkouts() {
     })).filter(s => s.count > 0).sort((a, b) => b.count - a.count)
   }
 
-  const totalDuration = records.reduce((sum, r) => sum + r.duration, 0)
   const getRecordsWithLocation = () => records.filter(r => r.location)
 
   return {
     records, addRecord, deleteRecord,
     todayRecords, isCheckedInToday,
-    streak: getStreak(), monthCheckins: getMonthCheckins(),
+    streak, monthCheckins,
     totalDuration, getMonthDates, exerciseTypes: EXERCISE_TYPES,
     getRecordsWithLocation, getWeekStats, getRecentRecords, getTypeStats,
     goals, setGoals, theme, setTheme,

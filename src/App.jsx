@@ -1,24 +1,24 @@
-import { useState } from 'react'
+import { useState, lazy, Suspense } from 'react'
 import { useWorkouts } from './hooks/useWorkouts'
 import { useCommunity } from './hooks/useCommunity'
 import HomePage from './components/HomePage'
-import LivePage from './components/LivePage'
-import ShopPage from './components/ShopPage'
-import MessagesPage from './components/MessagesPage'
-import CheckIn from './components/CheckIn'
-import Calendar from './components/Calendar'
-import Stats from './components/Stats'
-import History from './components/History'
-import WorkoutMap from './components/WorkoutMap'
 import BottomNav from './components/BottomNav'
-import WeeklyChart from './components/WeeklyChart'
-import TypeStats from './components/TypeStats'
-import GoalSetting from './components/GoalSetting'
-import Profile from './components/Profile'
-import PostFeed from './components/PostFeed'
-import CreatePost from './components/CreatePost'
-import KnowledgeBase from './components/KnowledgeBase'
-import LinkCollection from './components/LinkCollection'
+
+const LivePage = lazy(() => import('./components/LivePage'))
+const ShopPage = lazy(() => import('./components/ShopPage'))
+const MessagesPage = lazy(() => import('./components/MessagesPage'))
+const CheckIn = lazy(() => import('./components/CheckIn'))
+const Calendar = lazy(() => import('./components/Calendar'))
+const Stats = lazy(() => import('./components/Stats'))
+const History = lazy(() => import('./components/History'))
+const WeeklyChart = lazy(() => import('./components/WeeklyChart'))
+const TypeStats = lazy(() => import('./components/TypeStats'))
+const GoalSetting = lazy(() => import('./components/GoalSetting'))
+const Profile = lazy(() => import('./components/Profile'))
+const PostFeed = lazy(() => import('./components/PostFeed'))
+const CreatePost = lazy(() => import('./components/CreatePost'))
+const KnowledgeBase = lazy(() => import('./components/KnowledgeBase'))
+const LinkCollection = lazy(() => import('./components/LinkCollection'))
 
 const TITLES = {
   home: '🐟 吃鱼',
@@ -153,7 +153,9 @@ export default function App() {
         </div>
       </header>
       <main className="app-main">
-        {renderContent()}
+        <Suspense fallback={<div style={{textAlign:'center',padding:'40px',color:'var(--text-secondary)'}}>加载中...</div>}>
+          {renderContent()}
+        </Suspense>
       </main>
       {showCreatePost && (
         <CreatePost

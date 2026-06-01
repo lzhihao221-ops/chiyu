@@ -71,10 +71,14 @@ export default function HomePage({ onNavigate }) {
             key={i}
             className="quick-action-btn"
             onClick={() => {
-              if (a.label === '打卡') onNavigate('home')
-              else if (a.label === '动态') onNavigate('community')
+              if (a.label === '打卡') onNavigate('checkin')
+              else if (a.label === '直播') onNavigate('live')
+              else if (a.label === '商城') onNavigate('shop')
               else if (a.label === '课程') onNavigate('knowledge')
               else if (a.label === '圈子') onNavigate('community')
+              else if (a.label === '动态') onNavigate('community')
+              else if (a.label === '排行') onNavigate('stats')
+              else if (a.label === '更多') onNavigate('profile')
             }}
           >
             <span className="qa-icon" style={{ background: a.color + '20', color: a.color }}>{a.icon}</span>
