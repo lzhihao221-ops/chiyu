@@ -1,5 +1,5 @@
-const CACHE_NAME = 'workout-checkin-v1'
-const ASSETS = ['/', '/index.html', '/manifest.json', '/icon.svg']
+const CACHE_NAME = 'chiyu-v2'
+const ASSETS = ['./', './index.html', './manifest.json', './icon.svg']
 
 self.addEventListener('install', (e) => {
   e.waitUntil(
