@@ -2,6 +2,7 @@ import { useState, lazy, Suspense } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { useWorkouts } from './hooks/useWorkouts'
 import { useCommunity } from './hooks/useCommunity'
+import { useTreeHole } from './hooks/useTreeHole'
 import HomePage from './components/HomePage'
 import BottomNav from './components/BottomNav'
 import AuthPage from './components/AuthPage'
@@ -21,9 +22,12 @@ const PostFeed = lazy(() => import('./components/PostFeed'))
 const CreatePost = lazy(() => import('./components/CreatePost'))
 const KnowledgeBase = lazy(() => import('./components/KnowledgeBase'))
 const LinkCollection = lazy(() => import('./components/LinkCollection'))
+const TreeHolePage = lazy(() => import('./components/TreeHolePage'))
+const CreateTreeHole = lazy(() => import('./components/CreateTreeHole'))
 
 const TITLES = {
   home: '🐟 吃鱼',
+  treehole: '🕳️ 树洞',
   live: '📺 直播',
   community: '🌐 社区',
   shop: '🛒 商城',
@@ -38,18 +42,18 @@ export default function App() {
   const auth = useAuth()
   const [activeTab, setActiveTab] = useState('home')
   const [showCreatePost, setShowCreatePost] = useState(false)
+  const [showCreateHole, setShowCreateHole] = useState(false)
   const [communitySubTab, setCommunitySubTab] = useState('feed')
   const hook = useWorkouts(auth.user, auth.useCloud)
   const comm = useCommunity(auth.user, auth.useCloud)
+  const tree = useTreeHole(auth.user, auth.useCloud)
 
   const navigate = (tab) => setActiveTab(tab)
 
-  // 加载中
   if (auth.loading) {
     return <div style={{ textAlign: 'center', paddingTop: '40vh', color: 'var(--text-secondary)' }}>加载中...</div>
   }
 
-  // 未登录 → 登录页
   if (!auth.isLoggedIn) {
     return <AuthPage onAuth={auth.handleAuth} />
   }
@@ -58,6 +62,21 @@ export default function App() {
     switch (activeTab) {
       case 'home':
         return <HomePage onNavigate={navigate} />
+      case 'treehole':
+        return (
+          <>
+            <TreeHolePage
+              holes={tree.holes}
+              categories={tree.categories}
+              reactions={tree.reactions}
+              onDelete={tree.deleteHole}
+              onReaction={tree.addReaction}
+              onComment={tree.addComment}
+              userId={auth.user?.id}
+              onCreate={() => setShowCreateHole(true)}
+            />
+          </>
+        )
       case 'live':
         return <LivePage />
       case 'community':
@@ -180,6 +199,13 @@ export default function App() {
           categories={comm.categories}
           onSubmit={comm.addPost}
           onClose={() => setShowCreatePost(false)}
+        />
+      )}
+      {showCreateHole && (
+        <CreateTreeHole
+          categories={tree.categories}
+          onSubmit={tree.addHole}
+          onClose={() => setShowCreateHole(false)}
         />
       )}
       <BottomNav active={activeTab} onChange={setActiveTab} />

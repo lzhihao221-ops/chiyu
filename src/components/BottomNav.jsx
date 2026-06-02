@@ -1,10 +1,10 @@
 export default function BottomNav({ active, onChange }) {
   const tabs = [
     { id: 'home', icon: '🏠', label: '首页' },
-    { id: 'live', icon: '📺', label: '直播' },
+    { id: 'treehole', icon: '🕳️', label: '树洞' },
     { id: 'community', icon: '🌐', label: '社区' },
-    { id: 'shop', icon: '🛒', label: '商城' },
-    { id: 'messages', icon: '💬', label: '消息' },
+    { id: 'checkin', icon: '🎯', label: '打卡' },
+    { id: 'profile', icon: '👤', label: '我的' },
   ]
   return (
     <nav className="bottom-nav">
