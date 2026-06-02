@@ -24,6 +24,7 @@ const KnowledgeBase = lazy(() => import('./components/KnowledgeBase'))
 const LinkCollection = lazy(() => import('./components/LinkCollection'))
 const TreeHolePage = lazy(() => import('./components/TreeHolePage'))
 const CreateTreeHole = lazy(() => import('./components/CreateTreeHole'))
+const TypeManager = lazy(() => import('./components/TypeManager'))
 
 const TITLES = {
   home: '🐟 吃鱼',
@@ -43,6 +44,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('home')
   const [showCreatePost, setShowCreatePost] = useState(false)
   const [showCreateHole, setShowCreateHole] = useState(false)
+  const [showTypeManager, setShowTypeManager] = useState(false)
   const [communitySubTab, setCommunitySubTab] = useState('feed')
   const hook = useWorkouts(auth.user, auth.useCloud)
   const comm = useCommunity(auth.user, auth.useCloud)
@@ -169,6 +171,7 @@ export default function App() {
             useCloud={auth.useCloud}
             onLogout={auth.logout}
             profile={auth.profile}
+            onManageTypes={() => setShowTypeManager(true)}
           />
         )
       default:
@@ -209,6 +212,15 @@ export default function App() {
             onSubmit={tree.addHole}
             onClose={() => setShowCreateHole(false)}
             useCloud={auth.useCloud}
+          />
+        )}
+        {showTypeManager && (
+          <TypeManager
+            exerciseTypes={hook.exerciseTypes}
+            customTypes={hook.customTypes}
+            onAdd={hook.addExerciseType}
+            onDelete={hook.deleteExerciseType}
+            onClose={() => setShowTypeManager(false)}
           />
         )}
       </Suspense>

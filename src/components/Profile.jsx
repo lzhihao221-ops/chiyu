@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { exportToCSV, toJSON } from '../lib/export'
 import './Profile.css'
 
-export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName, isGuest, useCloud, onLogout, profile }) {
+export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName, isGuest, useCloud, onLogout, profile, onManageTypes }) {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(userName)
 
@@ -72,6 +72,10 @@ export default function Profile({ theme, setTheme, totalDuration, records, strea
         <div className="menu-item" onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
           <span>🌓 深色模式</span>
           <span className="menu-toggle">{theme === 'dark' ? '开启' : '关闭'}</span>
+        </div>
+        <div className="menu-item" onClick={onManageTypes}>
+          <span>🏃 运动类型管理</span>
+          <span className="menu-arrow">›</span>
         </div>
         {!useCloud && (
           <div className="menu-item" onClick={() => {

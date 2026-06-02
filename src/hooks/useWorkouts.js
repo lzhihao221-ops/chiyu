@@ -4,18 +4,19 @@ import { supabase } from '../lib/supabase'
 const STORAGE_KEY = 'workout-checkin-data'
 const GOALS_KEY = 'workout-goals'
 const THEME_KEY = 'workout-theme'
+const CUSTOM_TYPES_KEY = 'custom-exercise-types'
 
-const EXERCISE_TYPES = [
-  { id: 'running', name: '跑步', icon: '🏃', color: '#ff6b6b' },
-  { id: 'walking', name: '健走', icon: '🚶', color: '#51cf66' },
-  { id: 'cycling', name: '骑行', icon: '🚴', color: '#339af0' },
-  { id: 'swimming', name: '游泳', icon: '🏊', color: '#22b8cf' },
-  { id: 'yoga', name: '瑜伽', icon: '🧘', color: '#cc5de8' },
-  { id: 'gym', name: '健身', icon: '💪', color: '#ff922b' },
-  { id: 'basketball', name: '篮球', icon: '🏀', color: '#f76707' },
-  { id: 'badminton', name: '羽毛球', icon: '🏸', color: '#20c997' },
-  { id: 'jumping', name: '跳绳', icon: '⚡', color: '#fcc419' },
-  { id: 'other', name: '其他', icon: '🎯', color: '#868e96' },
+const BUILTIN_TYPES = [
+  { id: 'running', name: '跑步', icon: '🏃', color: '#ff6b6b', builtin: true },
+  { id: 'walking', name: '健走', icon: '🚶', color: '#51cf66', builtin: true },
+  { id: 'cycling', name: '骑行', icon: '🚴', color: '#339af0', builtin: true },
+  { id: 'swimming', name: '游泳', icon: '🏊', color: '#22b8cf', builtin: true },
+  { id: 'yoga', name: '瑜伽', icon: '🧘', color: '#cc5de8', builtin: true },
+  { id: 'gym', name: '健身', icon: '💪', color: '#ff922b', builtin: true },
+  { id: 'basketball', name: '篮球', icon: '🏀', color: '#f76707', builtin: true },
+  { id: 'badminton', name: '羽毛球', icon: '🏸', color: '#20c997', builtin: true },
+  { id: 'jumping', name: '跳绳', icon: '⚡', color: '#fcc419', builtin: true },
+  { id: 'other', name: '其他', icon: '🎯', color: '#868e96', builtin: true },
 ]
 
 function loadJSON(key, fallback) {
@@ -48,6 +49,10 @@ export function useWorkouts(user, useCloud) {
   const [records, setRecords] = useState(() => loadJSON(STORAGE_KEY, []))
   const [goals, setGoals] = useState(() => loadJSON(GOALS_KEY, { weeklyDays: 5, dailyMinutes: 30 }))
   const [theme, setTheme] = useState(() => localStorage.getItem(THEME_KEY) || 'light')
+  const [customTypes, setCustomTypes] = useState(() => loadJSON(CUSTOM_TYPES_KEY, []))
+
+  // 合并内置+自定义类型
+  const exerciseTypes = [...BUILTIN_TYPES, ...customTypes]
 
   // 云端模式：加载数据
   useEffect(() => {
@@ -81,6 +86,7 @@ export function useWorkouts(user, useCloud) {
   // 本地模式：写 localStorage
   useEffect(() => { if (!useCloud) saveJSON(STORAGE_KEY, records) }, [records, useCloud])
   useEffect(() => { if (!useCloud) saveJSON(GOALS_KEY, goals) }, [goals, useCloud])
+  useEffect(() => { saveJSON(CUSTOM_TYPES_KEY, customTypes) }, [customTypes])
   useEffect(() => {
     localStorage.setItem(THEME_KEY, theme)
     document.documentElement.setAttribute('data-theme', theme)
@@ -107,6 +113,18 @@ export function useWorkouts(user, useCloud) {
     }
     setRecords(prev => prev.filter(r => r.id !== id))
   }, [useCloud, user])
+
+  // 自定义运动类型管理
+  const addExerciseType = useCallback((name, icon, color) => {
+    const id = 'custom_' + Date.now().toString(36)
+    const newType = { id, name, icon, color, builtin: false }
+    setCustomTypes(prev => [...prev, newType])
+    return id
+  }, [])
+
+  const deleteExerciseType = useCallback((id) => {
+    setCustomTypes(prev => prev.filter(t => t.id !== id))
+  }, [])
 
   const saveGoals = useCallback(async (newGoals) => {
     setGoals(newGoals)
@@ -184,7 +202,7 @@ export function useWorkouts(user, useCloud) {
       stats[r.type].count++
       stats[r.type].duration += (r.duration || 0)
     })
-    return EXERCISE_TYPES.map(t => ({
+    return exerciseTypes.map(t => ({
       ...t,
       count: stats[t.id]?.count || 0,
       duration: stats[t.id]?.duration || 0,
@@ -195,8 +213,9 @@ export function useWorkouts(user, useCloud) {
     records, addRecord, deleteRecord,
     todayRecords, isCheckedInToday,
     streak, monthCheckins,
-    totalDuration, getMonthDates, exerciseTypes: EXERCISE_TYPES,
+    totalDuration, getMonthDates, exerciseTypes,
     getWeekStats, getRecentRecords, getTypeStats,
     goals, setGoals: saveGoals, theme, setTheme,
+    addExerciseType, deleteExerciseType, customTypes,
   }
 }
