@@ -194,22 +194,24 @@ export default function App() {
           {renderContent()}
         </Suspense>
       </main>
-      {showCreatePost && (
-        <CreatePost
-          categories={comm.categories}
-          onSubmit={comm.addPost}
-          onClose={() => setShowCreatePost(false)}
-          useCloud={auth.useCloud}
-        />
-      )}
-      {showCreateHole && (
-        <CreateTreeHole
-          categories={tree.categories}
-          onSubmit={tree.addHole}
-          onClose={() => setShowCreateHole(false)}
-          useCloud={auth.useCloud}
-        />
-      )}
+      <Suspense fallback={null}>
+        {showCreatePost && (
+          <CreatePost
+            categories={comm.categories}
+            onSubmit={comm.addPost}
+            onClose={() => setShowCreatePost(false)}
+            useCloud={auth.useCloud}
+          />
+        )}
+        {showCreateHole && (
+          <CreateTreeHole
+            categories={tree.categories}
+            onSubmit={tree.addHole}
+            onClose={() => setShowCreateHole(false)}
+            useCloud={auth.useCloud}
+          />
+        )}
+      </Suspense>
       <BottomNav active={activeTab} onChange={setActiveTab} />
     </div>
   )
