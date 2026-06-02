@@ -1,3 +1,5 @@
+import './History.css'
+
 export default function History({ records, exerciseTypes, onDelete }) {
   const getTypeInfo = (typeId) => {
     return exerciseTypes.find(t => t.id === typeId) || { icon: '🎯', name: '其他' }

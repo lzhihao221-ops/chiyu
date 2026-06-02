@@ -1,3 +1,5 @@
+import './Stats.css'
+
 export default function Stats({ streak, monthCheckins, totalDuration, totalRecords }) {
   const stats = [
     { label: '连续打卡', value: streak, unit: '天', icon: '🔥' },

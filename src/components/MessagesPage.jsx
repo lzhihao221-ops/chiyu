@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './MessagesPage.css'
 
 const MOCK_CONVERSATIONS = [
   { id: 1, name: '健身小王', avatar: '🏃', lastMsg: '明天一起晨跑吗？', time: '刚刚', unread: 2 },

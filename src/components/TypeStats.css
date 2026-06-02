@@ -1,0 +1,31 @@
+/* Type Stats */
+.type-stats-section {
+  background: var(--card);
+  border-radius: var(--radius);
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.type-stats-section h2 { font-size: 17px; margin-bottom: 12px; }
+
+.type-stats-list { display: flex; flex-direction: column; gap: 10px; }
+
+.type-stat-item { display: flex; align-items: center; gap: 10px; }
+.type-stat-icon { font-size: 22px; flex-shrink: 0; }
+.type-stat-info { flex: 1; }
+.type-stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.type-stat-name { font-size: 14px; font-weight: 500; }
+.type-stat-count { font-size: 12px; color: var(--text-secondary); }
+
+.type-stat-bar-bg {
+  height: 6px;
+  background: var(--border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.type-stat-bar {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s;
+}

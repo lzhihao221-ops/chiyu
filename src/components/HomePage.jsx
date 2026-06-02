@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './HomePage.css'
 
 const BANNERS = [
   { id: 1, title: '🔥 热门直播中', subtitle: '健身达人在线教学', color: '#ff6b6b' },

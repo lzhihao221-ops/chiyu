@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './TreeHole.css'
 
 export default function TreeHolePage({ holes, categories, reactions, onDelete, onReaction, onComment, userId, onCreate }) {
   const [expandedHole, setExpandedHole] = useState(null)

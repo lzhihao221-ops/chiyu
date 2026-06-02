@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './ShopPage.css'
 
 const PRODUCTS = [
   { id: 1, name: '智能运动手环 Pro', price: 199, original: 399, sales: 32000, emoji: '⌚', category: '装备', desc: '心率监测/睡眠追踪/50米防水' },

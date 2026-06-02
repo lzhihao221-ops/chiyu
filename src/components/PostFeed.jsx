@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './PostFeed.css'
 
 export default function PostFeed({ posts, categories, onLike, onDelete, onComment, userId }) {
   const [expandedPost, setExpandedPost] = useState(null)

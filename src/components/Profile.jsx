@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './Profile.css'
 
 export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName, isGuest, useCloud, onLogout, profile }) {
   const [editingName, setEditingName] = useState(false)

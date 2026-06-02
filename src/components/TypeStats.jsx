@@ -1,3 +1,5 @@
+import './TypeStats.css'
+
 export default function TypeStats({ typeStats }) {
   if (typeStats.length === 0) return null
   const maxCount = Math.max(...typeStats.map(s => s.count))

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './AuthPage.css'
 
 export default function AuthPage({ onAuth }) {
   const [mode, setMode] = useState('login') // login | register

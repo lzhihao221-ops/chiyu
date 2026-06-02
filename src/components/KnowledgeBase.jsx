@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './KnowledgeBase.css'
 
 export default function KnowledgeBase({ knowledge, categories, onAdd, onDelete, onUpdate }) {
   const [showForm, setShowForm] = useState(false)

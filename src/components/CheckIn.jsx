@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './CheckIn.css'
 
 export default function CheckIn({ exerciseTypes, onAdd, isCheckedInToday }) {
   const [selectedType, setSelectedType] = useState('')

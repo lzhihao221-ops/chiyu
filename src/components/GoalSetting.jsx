@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './GoalSetting.css'
 
 export default function GoalSetting({ goals, onSave }) {
   const [weeklyDays, setWeeklyDays] = useState(goals.weeklyDays)

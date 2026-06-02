@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './LivePage.css'
 
 const MOCK_STREAMS = [
   { id: 1, title: '晨跑30分钟燃脂训练', streamer: '健身小王', viewers: 1234, avatar: '🏃', cover: '#ff6b6b', category: '跑步', started: '07:00' },

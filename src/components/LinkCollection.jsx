@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import './LinkCollection.css'
 
 export default function LinkCollection({ links, categories, onAdd, onDelete }) {
   const [showForm, setShowForm] = useState(false)

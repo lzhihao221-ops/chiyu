@@ -1,3 +1,5 @@
+import './WeeklyChart.css'
+
 export default function WeeklyChart({ weekStats, goals }) {
   const maxMinutes = Math.max(...weekStats.dailyData.map(d => d.minutes), goals.dailyMinutes)
   const goalPercent = Math.min(100, Math.round((weekStats.activeDays / goals.weeklyDays) * 100))
