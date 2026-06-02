@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { exportToCSV, toJSON } from '../lib/export'
 import './Profile.css'
 
 export default function Profile({ theme, setTheme, totalDuration, records, streak, exerciseTypes, userName, setUserName, isGuest, useCloud, onLogout, profile }) {
@@ -83,6 +84,14 @@ export default function Profile({ theme, setTheme, totalDuration, records, strea
             <span className="menu-arrow">›</span>
           </div>
         )}
+        <div className="menu-item" onClick={() => exportToCSV(records, exerciseTypes)}>
+          <span>📊 导出CSV表格</span>
+          <span className="menu-arrow">›</span>
+        </div>
+        <div className="menu-item" onClick={() => toJSON(records, exerciseTypes, userName)}>
+          <span>💾 备份JSON数据</span>
+          <span className="menu-arrow">›</span>
+        </div>
         <div className="menu-item logout" onClick={() => {
           if (confirm('确定要退出登录吗？')) onLogout()
         }}>
