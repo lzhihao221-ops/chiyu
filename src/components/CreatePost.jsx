@@ -1,21 +1,11 @@
 import { useState } from 'react'
+import ImagePicker from './ImagePicker'
 
-export default function CreatePost({ categories, onSubmit, onClose }) {
+export default function CreatePost({ categories, onSubmit, onClose, useCloud }) {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [category, setCategory] = useState('')
   const [images, setImages] = useState([])
-
-  const handleImageUpload = (e) => {
-    const files = Array.from(e.target.files)
-    files.forEach(file => {
-      const reader = new FileReader()
-      reader.onload = (ev) => {
-        setImages(prev => [...prev, ev.target.result])
-      }
-      reader.readAsDataURL(file)
-    })
-  }
 
   const handleSubmit = () => {
     if (!title.trim() || !content.trim() || !category) return
@@ -72,28 +62,7 @@ export default function CreatePost({ categories, onSubmit, onClose }) {
             maxLength={2000}
           />
 
-          <div className="create-images-section">
-            <label className="create-image-label">
-              📷 添加图片
-              <input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={handleImageUpload}
-                style={{ display: 'none' }}
-              />
-            </label>
-            {images.length > 0 && (
-              <div className="create-image-preview">
-                {images.map((img, i) => (
-                  <div key={i} className="preview-thumb">
-                    <img src={img} alt="" />
-                    <button onClick={() => setImages(prev => prev.filter((_, idx) => idx !== i))}>×</button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <ImagePicker images={images} setImages={setImages} useCloud={useCloud} />
         </div>
       </div>
     </div>

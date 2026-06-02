@@ -193,3 +193,50 @@ body {
   font-size: 16px;
   margin-right: 4px;
 }
+
+/* === ImagePicker (shared) === */
+.image-picker { margin-top: 12px; }
+.image-picker-btn {
+  display: inline-block;
+  padding: 8px 16px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+.image-picker-btn:hover { border-color: var(--primary); color: var(--primary); }
+.image-preview-grid {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.preview-thumb {
+  position: relative;
+  width: 80px;
+  height: 80px;
+}
+.preview-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.preview-remove {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ff3b30;
+  color: white;
+  border: none;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.treehole-images { margin: 8px 0; }

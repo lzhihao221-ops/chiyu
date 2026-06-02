@@ -199,6 +199,7 @@ export default function App() {
           categories={comm.categories}
           onSubmit={comm.addPost}
           onClose={() => setShowCreatePost(false)}
+          useCloud={auth.useCloud}
         />
       )}
       {showCreateHole && (
@@ -206,6 +207,7 @@ export default function App() {
           categories={tree.categories}
           onSubmit={tree.addHole}
           onClose={() => setShowCreateHole(false)}
+          useCloud={auth.useCloud}
         />
       )}
       <BottomNav active={activeTab} onChange={setActiveTab} />

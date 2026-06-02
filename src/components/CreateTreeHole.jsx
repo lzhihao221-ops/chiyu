@@ -1,14 +1,17 @@
 import { useState } from 'react'
+import ImagePicker from './ImagePicker'
 
-export default function CreateTreeHole({ categories, onSubmit, onClose }) {
+export default function CreateTreeHole({ categories, onSubmit, onClose, useCloud }) {
   const [content, setContent] = useState('')
   const [category, setCategory] = useState('')
+  const [images, setImages] = useState([])
 
   const handleSubmit = () => {
     if (!content.trim() || !category) return
-    onSubmit(content.trim(), category)
+    onSubmit(content.trim(), category, images)
     setContent('')
     setCategory('')
+    setImages([])
     onClose()
   }
 
@@ -48,6 +51,8 @@ export default function CreateTreeHole({ categories, onSubmit, onClose }) {
             maxLength={2000}
             autoFocus
           />
+
+          <ImagePicker images={images} setImages={setImages} useCloud={useCloud} />
 
           <div className="treehole-modal-footer">
             <span className="treehole-char-count">{content.length}/2000</span>

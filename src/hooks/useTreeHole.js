@@ -78,7 +78,7 @@ export function useTreeHole(user, useCloud) {
   }, [useCloud])
 
   // 发布树洞
-  const addHole = useCallback(async (content, category) => {
+  const addHole = useCallback(async (content, category, images = []) => {
     if (!useCloud || !user) return
     const id = generateId()
     const identity = randomIdentity()
@@ -88,6 +88,7 @@ export function useTreeHole(user, useCloud) {
       user_id: user.id,
       content,
       category,
+      images,
       anon_name: identity.name,
       anon_emoji: identity.emoji,
     })
@@ -96,6 +97,7 @@ export function useTreeHole(user, useCloud) {
       id,
       content,
       category,
+      images,
       anon_name: identity.name,
       anon_emoji: identity.emoji,
       created_at: new Date().toISOString(),

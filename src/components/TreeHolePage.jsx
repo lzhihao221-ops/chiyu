@@ -82,6 +82,14 @@ export default function TreeHolePage({ holes, categories, reactions, onDelete, o
 
                 <p className="treehole-content">{hole.content}</p>
 
+                {hole.images && hole.images.length > 0 && (
+                  <div className="post-images treehole-images">
+                    {hole.images.map((img, i) => (
+                      <img key={i} src={img} alt="" className="post-image" />
+                    ))}
+                  </div>
+                )}
+
                 {/* 反应按钮 */}
                 <div className="treehole-reactions">
                   {reactions.map(r => {
